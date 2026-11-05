@@ -1,0 +1,103 @@
+@startuml SplitSmartArchitectureBDatabaseERD
+title Architecture B - PostgreSQL ERD
+hide methods
+hide stereotypes
+
+entity ACCOUNT {
+  * id : UUID
+  --
+  * email : CITEXT UNIQUE
+  * password_hash : TEXT
+  * email_verified_at : TIMESTAMP
+}
+entity SPLIT_GROUP {
+  * id : UUID
+  --
+  * name : TEXT
+  * currency_code : CHAR(3)
+  * organizer_id : UUID
+}
+entity MEMBERSHIP {
+  * group_id : UUID <<PK>>
+  * account_id : UUID <<PK>>
+  --
+  * role : TEXT
+  * active : BOOLEAN
+}
+entity EXPENSE {
+  * id : UUID
+  --
+  * group_id : UUID
+  * submitted_by : UUID
+  * payer_id : UUID
+  * amount : NUMERIC(19,2)
+  * status : TEXT
+  * expense_date : DATE
+}
+entity ALLOCATION {
+  * expense_id : UUID <<PK>>
+  * participant_id : UUID <<PK>>
+  --
+  * allocation_order : INTEGER
+  * percentage : NUMERIC(7,4)
+  * share_amount : NUMERIC(19,2)
+}
+entity APPROVAL {
+  * id : UUID
+  --
+  * expense_id : UUID
+  * reviewer_id : UUID
+  * decision : TEXT
+  * decision_at : TIMESTAMP
+}
+entity PAYMENT {
+  * id : UUID
+  --
+  * group_id : UUID
+  * payer_id : UUID
+  * payee_id : UUID
+  * amount : NUMERIC(19,2)
+  * payment_date : DATE
+}
+entity RECEIPT {
+  * id : UUID
+  --
+  * expense_id : UUID
+  * object_key : TEXT
+  * content_hash : TEXT
+}
+entity NOTIFICATION {
+  * id : UUID
+  --
+  * recipient_id : UUID
+  * expense_id : UUID
+  * status : TEXT
+  * delivered_at : TIMESTAMP
+}
+entity AUDIT_ENTRY {
+  * id : UUID
+  --
+  * actor_id : UUID
+  * entity_type : TEXT
+  * entity_id : UUID
+  * action : TEXT
+  * occurred_at : TIMESTAMP
+}
+
+ACCOUNT ||--o{ MEMBERSHIP
+SPLIT_GROUP ||--o{ MEMBERSHIP
+ACCOUNT ||--o{ EXPENSE : submits
+ACCOUNT ||--o{ EXPENSE : pays
+SPLIT_GROUP ||--o{ EXPENSE
+EXPENSE ||--|{ ALLOCATION
+ACCOUNT ||--o{ ALLOCATION
+EXPENSE ||--o{ APPROVAL
+ACCOUNT ||--o{ APPROVAL
+EXPENSE ||--o| RECEIPT
+SPLIT_GROUP ||--o{ PAYMENT
+ACCOUNT ||--o{ PAYMENT : payer
+ACCOUNT ||--o{ PAYMENT : payee
+EXPENSE ||--o{ NOTIFICATION
+ACCOUNT ||--o{ NOTIFICATION
+ACCOUNT ||--o{ AUDIT_ENTRY
+@enduml

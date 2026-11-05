@@ -1,0 +1,39 @@
+@startuml SplitSmartArchitectureBSystemContext
+title Architecture B - Web-First System Context
+left to right direction
+skinparam componentStyle rectangle
+
+actor "Account holder" as user
+actor "Group organizer" as organizer
+actor "Reviewer" as reviewer
+
+rectangle "SplitSmart web-first product" as product {
+  component "Web client" as web
+  component "Android client" as android
+  component "iOS client" as ios
+  component "Versioned REST API" as api
+  component "Modular application backend" as backend
+  database "Shared PostgreSQL data" as db
+}
+
+cloud "Email provider" as email
+cloud "Receipt object storage" as storage
+
+user --> web
+user --> android
+user --> ios
+organizer --> web
+reviewer --> web
+web --> api : HTTPS
+android --> api : HTTPS
+ios --> api : HTTPS
+api --> backend
+backend --> db
+backend --> storage : receipt objects
+backend --> email : verification/reset only
+
+note right of product
+Architecture B is the full-product web-first alternative.
+The Java Swing MVP remains a separate decision in Architecture A.
+end note
+@enduml

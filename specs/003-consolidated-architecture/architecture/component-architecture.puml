@@ -1,0 +1,77 @@
+@startuml SplitSmartConsolidatedComponents
+title SplitSmart Consolidated Component Architecture
+left to right direction
+skinparam componentStyle rectangle
+
+package "Clients" {
+  [Web React/TypeScript] as web
+  [Android Kotlin/Compose] as android
+  [iOS Swift/SwiftUI] as ios
+}
+component "API gateway / TLS" as gateway
+component "Spring Security authentication" as security
+component "Authorization policy" as policy
+
+package "Java 21 Spring Boot modular monolith" {
+  [Identity] as identity
+  [Groups and membership] as groups
+  [Expenses and allocation] as expenses
+  [Approval] as approval
+  [Balances and payments] as balances
+  [Reporting] as reporting
+  [Notifications] as notifications
+  [Audit] as audit
+  [Outbox publisher] as outbox
+}
+
+database "PostgreSQL" as db
+queue "Durable notification queue" as queue
+folder "Private receipt storage" as receipts
+component "Notification worker" as worker
+cloud "Email provider" as email
+component "Observability platform" as obs
+
+web --> gateway
+android --> gateway
+ios --> gateway
+gateway --> security : authenticate / authorize
+security --> identity : account and token data
+security --> policy : roles and scopes
+gateway --> identity
+gateway --> groups
+gateway --> expenses
+gateway --> approval
+gateway --> balances
+gateway --> reporting
+expenses --> approval : submit for decision
+expenses --> notifications
+approval --> balances : approved expenses only
+balances ..> expenses : read-only query
+notifications --> outbox
+outbox --> queue
+queue --> worker
+worker --> notifications : idempotent delivery and retry
+identity --> db
+groups --> db
+expenses --> db
+approval --> db
+balances --> db
+reporting --> db
+notifications --> db
+audit --> db
+expenses --> receipts
+identity --> email
+worker --> db
+identity --> audit
+groups --> audit
+expenses --> audit
+approval --> audit
+balances --> audit
+worker --> obs
+identity --> obs
+expenses --> obs
+
+note bottom
+Modules share one transaction boundary; each owns its tables and domain invariants.
+end note
+@enduml

@@ -1,0 +1,67 @@
+@startuml SplitSmartComponentArchitecture
+title SplitSmart Component Architecture
+left to right direction
+skinparam componentStyle rectangle
+
+package "Presentation" {
+  [Swing views] as swing
+  [Swing controllers] as controllers
+}
+
+package "Application services" {
+  [Account service] as accountSvc
+  [Group service] as groupSvc
+  [Expense service] as expenseSvc
+  [Review service] as reviewSvc
+  [Payment service] as paymentSvc
+  [Balance service] as balanceSvc
+  [Report service] as reportSvc
+  [Notification service] as notificationSvc
+}
+
+package "Domain" {
+  [Account and membership] as accountDomain
+  [Expense and allocation] as expenseDomain
+  [Approval workflow] as approvalDomain
+  [Payment and balance] as paymentDomain
+  [Reporting policies] as reportDomain
+}
+
+package "Persistence adapters" {
+  interface "Repository ports" as ports
+  [H2 repositories] as h2
+  database "File-backed H2" as db
+}
+
+swing --> controllers
+controllers --> accountSvc
+controllers --> groupSvc
+controllers --> expenseSvc
+controllers --> reviewSvc
+controllers --> paymentSvc
+controllers --> balanceSvc
+controllers --> reportSvc
+accountSvc --> accountDomain
+groupSvc --> accountDomain
+expenseSvc --> expenseDomain
+reviewSvc --> approvalDomain
+paymentSvc --> paymentDomain
+balanceSvc --> paymentDomain
+reportSvc --> reportDomain
+notificationSvc --> expenseDomain
+accountSvc --> ports
+groupSvc --> ports
+expenseSvc --> ports
+reviewSvc --> ports
+paymentSvc --> ports
+balanceSvc --> ports
+reportSvc --> ports
+notificationSvc --> ports
+h2 ..|> ports
+h2 --> db
+
+note bottom
+Swing event handlers do not calculate allocations, approvals, balances, or payment limits.
+All monetary rules are domain/application behavior and use BigDecimal.
+end note
+@enduml

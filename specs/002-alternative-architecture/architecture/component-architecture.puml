@@ -1,0 +1,63 @@
+@startuml SplitSmartArchitectureBComponents
+title Architecture B - Modular Component Architecture
+left to right direction
+skinparam componentStyle rectangle
+
+package "Clients" {
+  [Web client] as web
+  [Android client] as android
+  [iOS client] as ios
+}
+package "Edge" {
+  [TLS termination / API gateway] as gateway
+  [Authentication middleware] as auth
+}
+package "Modular backend" {
+  [Account module] as account
+  [Group and membership module] as group
+  [Expense and allocation module] as expense
+  [Approval module] as approval
+  [Balance and payment module] as balance
+  [Reporting module] as reporting
+  [Notification module] as notification
+  [Audit module] as audit
+}
+database "PostgreSQL" as postgres
+queue "Notification queue" as queue
+cloud "Receipt object storage" as objects
+cloud "Email provider" as email
+
+web --> gateway
+android --> gateway
+ios --> gateway
+gateway --> auth
+gateway --> account
+gateway --> group
+gateway --> expense
+gateway --> approval
+gateway --> balance
+gateway --> reporting
+expense --> approval
+expense --> balance
+expense --> notification
+notification --> queue
+account --> audit
+group --> audit
+expense --> audit
+approval --> audit
+balance --> audit
+reporting --> postgres
+account --> postgres
+group --> postgres
+expense --> postgres
+approval --> postgres
+balance --> postgres
+audit --> postgres
+expense --> objects
+account --> email : verification/reset
+
+note bottom
+Modules share one transaction boundary and explicit schema ownership.
+Business calculations remain independent of client technology.
+end note
+@enduml

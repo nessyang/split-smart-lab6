@@ -1,0 +1,159 @@
+@startuml SplitSmartConsolidatedDatabaseERD
+title SplitSmart Consolidated PostgreSQL ERD
+hide methods
+hide stereotypes
+
+entity account {
+  * id : uuid
+  --
+  * email : citext unique
+  * password_hash : text
+  * email_verified_at : timestamptz
+  * created_at : timestamptz
+}
+entity refresh_token {
+  * id : uuid
+  --
+  * account_id : uuid FK
+  * token_hash : text unique
+  * expires_at : timestamptz
+  * revoked_at : timestamptz
+  * replaced_by_id : uuid FK
+}
+entity password_reset_token {
+  * id : uuid
+  --
+  * account_id : uuid FK
+  * token_hash : text unique
+  * expires_at : timestamptz
+  * consumed_at : timestamptz
+}
+entity split_group {
+  * id : uuid
+  --
+  * organizer_id : uuid FK
+  * name : text
+  * currency_code : char(3)
+}
+entity membership {
+  * group_id : uuid PK/FK
+  * account_id : uuid PK/FK
+  --
+  * role : text
+  * active : boolean
+  * version : bigint
+}
+entity expense {
+  * id : uuid
+  --
+  * group_id : uuid FK
+  * submitted_by : uuid FK
+  * payer_id : uuid FK
+  * amount : numeric(19,2)
+  * status : text
+  * version : bigint
+  * expense_date : date
+}
+entity allocation {
+  * expense_id : uuid PK/FK
+  * participant_id : uuid PK/FK
+  --
+  * participant_order : integer
+  * method : text
+  * percentage : numeric(7,4)
+  * share_amount : numeric(19,2)
+}
+entity approval {
+  * id : uuid
+  --
+  * expense_id : uuid FK
+  * reviewer_id : uuid FK
+  * decision : text
+  * decision_at : timestamptz
+}
+entity payment {
+  * id : uuid
+  --
+  * group_id : uuid FK
+  * payer_id : uuid FK
+  * payee_id : uuid FK
+  * amount : numeric(19,2)
+  * version : bigint
+  * payment_date : date
+}
+entity receipt {
+  * id : uuid
+  --
+  * expense_id : uuid UNIQUE/FK
+  * object_key : text UNIQUE
+  * expires_at : timestamptz
+}
+entity notification {
+  * id : uuid
+  --
+  * recipient_id : uuid FK
+  * group_id : uuid FK
+  * expense_id : uuid FK
+  * event_key : text UNIQUE
+  * kind : text
+  * status : text
+  * attempt_count : integer
+  * next_attempt_at : timestamptz
+  * delivered_at : timestamptz
+  * last_error : text
+  * created_at : timestamptz
+}
+entity outbox_event {
+  * id : uuid
+  --
+  * aggregate_type : text
+  * aggregate_id : uuid
+  * event_type : text
+  * payload : jsonb
+  * event_key : text UNIQUE
+  * published_at : timestamptz
+  * attempts : integer
+  * next_attempt_at : timestamptz
+}
+entity audit_entry {
+  * id : uuid
+  --
+  * actor_id : uuid FK
+  * entity_type : text
+  * entity_id : uuid
+  * action : text
+  * occurred_at : timestamptz
+}
+entity idempotency_key {
+  * account_id : uuid PK/FK
+  * key : text PK
+  --
+  * request_hash : text
+  * response_snapshot : jsonb
+  * expires_at : timestamptz
+}
+
+account ||--o{ refresh_token
+account ||--o{ password_reset_token
+account ||--o{ membership
+split_group ||--o{ membership
+account ||--o{ split_group : organizes
+split_group ||--o{ expense
+account ||--o{ expense : submits
+account ||--o{ expense : pays
+expense ||--|{ allocation
+account ||--o{ allocation
+expense ||--o{ approval
+account ||--o{ approval
+expense ||--o| receipt
+split_group ||--o{ payment
+split_group ||--o{ notification
+account ||--o{ payment : payer
+account ||--o{ payment : payee
+account ||--o{ notification
+expense ||--o{ notification
+outbox_event ||--o{ notification : delivers
+account ||--o{ audit_entry
+expense ||--o{ outbox_event
+account ||--o{ idempotency_key
+@enduml

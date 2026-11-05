@@ -1,0 +1,107 @@
+@startuml SplitSmartDatabaseERD
+title SplitSmart Database ERD
+hide methods
+hide stereotypes
+
+entity ACCOUNT {
+  * id : UUID
+  --
+  * email : VARCHAR
+  * password_hash : VARCHAR
+  * email_verified : BOOLEAN
+  * created_at : TIMESTAMP
+}
+
+entity SPLIT_GROUP {
+  * id : UUID
+  --
+  * name : VARCHAR
+  * currency_code : CHAR(3)
+  * created_by : UUID
+  * active : BOOLEAN
+}
+
+entity MEMBERSHIP {
+  * id : UUID
+  --
+  * group_id : UUID
+  * account_id : UUID
+  * role : VARCHAR
+  * active : BOOLEAN
+}
+
+entity EXPENSE {
+  * id : UUID
+  --
+  * group_id : UUID
+  * submitted_by : UUID
+  * payer_id : UUID
+  * amount : DECIMAL(19,2)
+  * expense_date : DATE
+  * status : VARCHAR
+}
+
+entity ALLOCATION {
+  * id : UUID
+  --
+  * expense_id : UUID
+  * participant_id : UUID
+  * share_amount : DECIMAL(19,2)
+  * allocation_order : INTEGER
+}
+
+entity APPROVAL {
+  * id : UUID
+  --
+  * expense_id : UUID
+  * reviewer_id : UUID
+  * decision : VARCHAR
+  * decision_at : TIMESTAMP
+}
+
+entity PAYMENT {
+  * id : UUID
+  --
+  * group_id : UUID
+  * payer_id : UUID
+  * payee_id : UUID
+  * amount : DECIMAL(19,2)
+  * payment_date : DATE
+}
+
+entity NOTIFICATION {
+  * id : UUID
+  --
+  * group_id : UUID
+  * expense_id : UUID
+  * recipient_id : UUID
+  * status : VARCHAR
+}
+
+entity AUDIT_ENTRY {
+  * id : UUID
+  --
+  * actor_id : UUID
+  * entity_type : VARCHAR
+  * entity_id : UUID
+  * action : VARCHAR
+  * occurred_at : TIMESTAMP
+}
+
+ACCOUNT ||--o{ MEMBERSHIP
+SPLIT_GROUP ||--o{ MEMBERSHIP
+SPLIT_GROUP ||--o{ EXPENSE
+ACCOUNT ||--o{ EXPENSE : submits
+ACCOUNT ||--o{ EXPENSE : pays
+EXPENSE ||--|{ ALLOCATION
+ACCOUNT ||--o{ ALLOCATION : participates
+EXPENSE ||--o{ APPROVAL
+ACCOUNT ||--o{ APPROVAL : reviews
+SPLIT_GROUP ||--o{ PAYMENT
+ACCOUNT ||--o{ PAYMENT : payer
+ACCOUNT ||--o{ PAYMENT : payee
+SPLIT_GROUP ||--o{ NOTIFICATION
+EXPENSE ||--o{ NOTIFICATION
+ACCOUNT ||--o{ NOTIFICATION : receives
+ACCOUNT ||--o{ AUDIT_ENTRY : acts
+@enduml

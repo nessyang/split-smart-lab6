@@ -1,0 +1,47 @@
+@startuml SplitSmartArchitectureBDeployment
+title Architecture B - Deployment Architecture
+left to right direction
+skinparam componentStyle rectangle
+
+node "User devices" as devices {
+  artifact "Browser" as browser
+  artifact "Android app" as android
+  artifact "iOS app" as ios
+}
+cloud "Cloud environment" as cloud {
+  node "Public edge" as edge {
+    component "CDN / WAF" as waf
+    component "API gateway" as gateway
+  }
+  node "Application tier" as appTier {
+    component "Modular backend instances" as backend
+    component "Worker instance" as worker
+  }
+  database "Managed PostgreSQL" as postgres
+  queue "Durable notification queue" as queue
+  folder "Receipt object storage" as objects
+  component "Central logs/metrics" as observability
+}
+cloud "External services" as external {
+  component "Email provider" as email
+}
+
+browser --> waf : HTTPS
+android --> waf : HTTPS
+ios --> waf : HTTPS
+waf --> gateway
+gateway --> backend : HTTPS/internal
+backend --> postgres : TLS database connection
+backend --> objects : signed object access
+backend --> queue
+queue --> worker
+worker --> postgres
+backend --> observability
+worker --> observability
+backend --> email
+
+note bottom of cloud
+  Architecture B uses horizontally scalable stateless backend instances.
+  Database transactions remain the consistency boundary.
+end note
+@enduml

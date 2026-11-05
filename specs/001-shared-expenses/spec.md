@@ -24,6 +24,14 @@
 - Q: What maximum should apply to a positive expense amount? → A: No product-specific maximum beyond the selected currency's valid amount limits.
 - Q: Which notification channels should SplitSmart use to alert group members about submitted expenses? → A: In-app notifications only.
 
+### Session 2026-11-05
+
+- Q: Who may approve submitted expenses, and how are those reviewers selected? → A: Only group organizers and explicitly designated reviewers may approve; the organizer selects reviewers per group.
+- Q: Which currencies should SplitSmart support in the initial scope? → A: Support USD only initially; design the data model to allow future currencies.
+- Q: What date range should be accepted for expense dates? → A: Any valid calendar date, with future dates allowed.
+- Q: Is the proposed Java Swing MVP approved as a desktop-only subset that does not satisfy the full web, Android, and iOS product target? → A: Approve the Java Swing MVP as a separate, desktop-only validation subset.
+- Q: When multiple debts exist between group members, how should a payment be allocated? → A: Apply each payment only to the specified payer-payee debt.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### Actors
@@ -158,7 +166,8 @@ then verify access to the account's authorized groups and current records.
 
 ### Edge Cases
 
-- Reject an expense with a missing description, invalid date, non-positive amount,
+- Reject an expense with a missing description, malformed or otherwise invalid date,
+  non-positive amount,
   amount invalid for the selected currency, no participants, participants outside the
   group, or an allocation that does not match the amount under the group's currency
   rules.
@@ -209,7 +218,9 @@ requirements are part of the full product target, not claims about the Swing MVP
 - **FR-006**: The system MUST require an expense to pass the group's configured review
   and approval workflow before including it in balances or approved-expense reports.
 - **FR-007**: The system MUST support a group-configured approval workflow with at
-  least one review and the option to require multiple approval levels.
+  least one review and the option to require multiple approval levels. Only the group
+  organizer and explicitly designated group reviewers may approve an expense; the
+  organizer selects reviewers for each group.
 - **FR-008**: The system MUST let authorized reviewers review submitted expenses and
   record approval or rejection; submitters and group members with access MUST be able
   to see the outcome.
@@ -220,6 +231,7 @@ requirements are part of the full product target, not claims about the Swing MVP
   from every other relevant user based on approved expenses and recorded payments.
 - **FR-011**: The system MUST let users record payments that settle amounts owed,
   including the payer, payee, amount, and date, and MUST update the remaining balance.
+  Each payment MUST apply only to the specified payer-payee debt.
   It MUST accept partial payments up to the payer's outstanding debt to that payee and
   reject any amount above that debt with an explanation, without changing the balance.
 - **FR-012**: The system MUST provide authorized users with expense reports and
@@ -305,9 +317,9 @@ recording, and basic expense, balance, and payment summaries with date filtering
 
 The candidate MVP does not deliver the customer's web-first product or Android and
 iOS applications, multi-stage approval, or configurable custom reporting. It MUST NOT
-be represented as satisfying the full customer request. The product owner must approve
-the MVP boundary and platform delivery plan before implementation is treated as
-authorized scope.
+be represented as satisfying the full customer request. The product owner has approved
+the MVP boundary as a desktop-only validation subset; the platform delivery plan
+remains separate.
 
 ## Key Entities *(include if feature involves data)*
 
@@ -361,8 +373,10 @@ authorized scope.
 - Accounts use email-and-password sign-in, email verification, and password reset.
 - A group expense has exactly one recorded payer, who may be outside the cost-sharing
   participants.
-- A single currency applies within a group in the initial scope; currency selection,
-  currency changes, and cross-currency expenses require a product decision.
+- USD is the only supported currency in the initial scope. The data model must allow
+  future currencies, but currency changes and cross-currency expenses are out of scope.
+- Expense dates may be any valid calendar date, including future dates; malformed or
+  otherwise invalid dates are rejected.
 - Equal and percentage splits must reconcile to the currency's smallest unit.
   Leftover minor units are assigned one at a time in the participant order shown on
   the expense.
@@ -370,10 +384,13 @@ authorized scope.
   approval and rejection do not trigger another notification. Notification
   preferences require a product decision.
 - Groups can select a single-stage or multi-stage approval process for the full
-  product; only single-stage approval is included in the candidate MVP.
+  product; only single-stage approval is included in the candidate MVP. The group
+  organizer selects the explicitly designated reviewers, and only the organizer or
+  those reviewers may approve expenses.
 - A rejected expense is excluded from balances and approved-expense totals.
 - Payments may partially settle one payer's debt to one payee, but cannot exceed the
-  outstanding pairwise debt.
+  outstanding pairwise debt. Each payment applies only to the specified payer-payee
+  debt and does not automatically affect other debts.
 - Expense amounts must be positive; refunds and corrections require separate
   transactions.
 - Positive expense amounts have no product-specific maximum beyond the selected
@@ -385,19 +402,10 @@ authorized scope.
 
 ## Open Questions
 
-1. What date limits are valid for expenses, and how should invalid dates be handled?
-2. How should payments be applied when several group members owe one another at the
-   same time?
-3. Who may approve expenses, how are reviewers selected, and what rules govern
-   multi-stage approval, edits, or resubmission?
-4. Which currencies are supported, and how are their minor units defined?
-5. Which custom report parameters, export formats, and data-retention policies are
+1. Which custom report parameters, export formats, and data-retention policies are
    required?
-6. What is the approved release sequence and feature parity target for the web,
+2. What is the approved release sequence and feature parity target for the web,
    Android, and iOS versions relative to the Java Swing MVP?
-7. Is the proposed Java Swing MVP subset approved, including its desktop-only scope
-   and the explicit exclusion of the customer's web and mobile platforms?
 
-Notification preferences and allocation of payments when multiple pairwise debts
-exist remain open. Resolve these alongside the other open product questions before
-treating the corresponding behavior as final.
+Notification preferences remain open. Resolve this alongside the other open product
+questions before treating the corresponding behavior as final.

@@ -1,0 +1,34 @@
+@startuml SplitSmartArchitectureBSecurity
+title Architecture B - Security Architecture
+left to right direction
+skinparam componentStyle rectangle
+
+actor user
+component "Web/mobile client" as client
+component "WAF and API gateway" as edge
+component "OIDC/session authentication" as auth
+component "Authorization policy engine" as policy
+component "Modular backend" as backend
+database "PostgreSQL" as db
+folder "Private receipt storage" as receipts
+component "Audit and security events" as audit
+cloud "Email provider" as email
+
+user --> client : credentials / access token
+client --> edge : TLS
+edge --> auth : authenticate/validate
+edge --> backend : authenticated request
+backend --> policy : account, group, role
+policy --> db : membership lookup
+backend --> db : parameterized transaction
+backend --> receipts : signed, short-lived URL
+backend --> audit : immutable event
+auth --> email : verification/reset
+
+note right of policy
+Default deny.
+Membership gates group data.
+Organizer/reviewer roles gate approval.
+Receipt access is separately authorized.
+end note
+@enduml

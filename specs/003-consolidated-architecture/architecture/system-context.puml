@@ -1,0 +1,49 @@
+@startuml SplitSmartConsolidatedSystemContext
+title SplitSmart Consolidated System Context
+left to right direction
+skinparam componentStyle rectangle
+
+actor "Account holder" as user
+actor "Group organizer" as organizer
+actor "Designated reviewer" as reviewer
+
+rectangle "SplitSmart web-first platform" as platform {
+  component "Web application" as web
+  component "Android application" as android
+  component "iOS application" as ios
+  component "Versioned REST API" as api
+  component "Java 21 Spring Boot modular monolith" as backend
+  database "PostgreSQL" as postgres
+  component "Transactional outbox events" as outbox
+  queue "Durable notification queue" as queue
+  component "In-app notification worker" as worker
+  folder "Private receipt object storage" as receipts
+}
+
+cloud "Email provider" as email
+cloud "Cloud monitoring/logging" as monitor
+
+user --> web
+user --> android
+user --> ios
+organizer --> web
+reviewer --> web
+web --> api : HTTPS
+android --> api : HTTPS
+ios --> api : HTTPS
+api --> backend
+backend --> postgres
+backend --> receipts
+backend --> outbox : same PostgreSQL transaction
+outbox --> queue : asynchronous publish
+queue --> worker : at-least-once delivery
+worker --> postgres : notification status/retry update
+backend --> email : verification/reset
+backend --> monitor
+worker --> monitor
+
+note right of platform
+One centralized authorization and transaction boundary.
+All clients observe the same committed state.
+end note
+@enduml

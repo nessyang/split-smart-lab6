@@ -1,0 +1,58 @@
+@startuml SplitSmartConsolidatedDeployment
+title SplitSmart Consolidated Cloud Deployment
+left to right direction
+skinparam componentStyle rectangle
+
+node "User devices" as devices {
+  artifact "Web browser" as browser
+  artifact "Android app" as android
+  artifact "iOS app" as ios
+}
+cloud "Cloud environment" as cloud {
+  node "Public edge" as edge {
+    component "CDN / WAF" as waf
+    component "API gateway" as gateway
+  }
+  node "Application tier" as app {
+    component "Java 21 Spring Boot instances" as backend
+    component "Notification worker" as worker
+  }
+  database "Managed PostgreSQL" as postgres
+  queue "Durable queue" as queue
+  folder "Private receipt object storage" as receipts
+  component "Central logs, metrics, traces" as observability
+  component "Managed secrets" as secrets
+  database "Encrypted backup/PITR storage" as backup
+  component "Recovery and restore process" as recovery
+}
+cloud "External services" as external {
+  component "Email provider" as email
+}
+
+browser --> waf : HTTPS
+android --> waf : HTTPS
+ios --> waf : HTTPS
+waf --> gateway
+gateway --> backend : HTTPS/internal TLS
+backend --> postgres : TLS
+backend --> receipts : signed object access
+backend --> queue
+queue --> worker
+worker --> postgres
+backend --> observability
+worker --> observability
+backend --> email
+backend --> secrets : runtime secrets
+worker --> secrets : runtime secrets
+postgres --> backup : encrypted backup/PITR stream
+receipts --> backup : object/version backup
+backup --> recovery : restore source
+recovery --> postgres : restore/verify
+recovery --> receipts : restore/verify
+
+note bottom of cloud
+Backend instances are stateless and scale horizontally.
+PostgreSQL transactions are the consistency boundary.
+Recovery targets are operational decisions; no unapproved RPO/RTO is shown.
+end note
+@enduml

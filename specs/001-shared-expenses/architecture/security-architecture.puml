@@ -1,0 +1,39 @@
+@startuml SplitSmartSecurityArchitecture
+title SplitSmart Security Architecture
+left to right direction
+skinparam componentStyle rectangle
+
+actor "Account holder" as user
+component "Swing UI / future clients" as client
+component "Authentication service" as auth
+component "Authorization policy" as policy
+component "Application services" as services
+database "Encrypted credential store" as credentials
+database "Expense and membership data" as data
+component "Audit history" as audit
+component "Receipt access control" as receipts
+
+user --> client : credentials / session
+client --> auth : authenticate
+auth --> credentials : verify password hash
+auth --> policy : account identity
+client --> services : authenticated operation
+services --> policy : group/resource check
+policy --> data : membership and role lookup
+services --> data : authorized transaction
+services --> receipts : authorized receipt access
+services --> audit : actor, action, time
+
+note right of policy
+  Organizer: membership and reviewer designation
+  Designated reviewer: approve/reject expense
+  Member: own/group access permitted by membership
+  Non-member: deny without disclosure
+end note
+
+note bottom
+  MVP uses local account/session handling; the full product must place authentication
+  and authorization behind the shared service boundary. No password is stored in
+  plaintext. Failed writes do not produce successful audit or balance changes.
+end note
+@enduml
